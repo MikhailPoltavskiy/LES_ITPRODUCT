@@ -28,4 +28,7 @@ class AppResponse extends Response {
 
   AppResponse.unauthorized({String? message})
       : super.unauthorized(body: AppResponseModel(message: message));
+
+  AppResponse.notFound({String? message})
+      : super.notFound(body: AppResponseModel(message: message));
 }

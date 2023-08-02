@@ -46,15 +46,15 @@ class AppPostController extends ResourceController {
     try {
       final currentAuthorId = AppUtils.getIdFromHeader(header);
       final post = await managedContext.fetchObjectWithID<Post>(id);
-
       if (post == null) {
-        return AppResponse.ok(
-          message: 'Посто не найден',
+        return AppResponse.serverError(
+          Error,
+          message: 'Пост не найден',
         );
       }
-
       if (post.author?.id != currentAuthorId) {
-        return AppResponse.ok(
+        return AppResponse.serverError(
+          Error,
           message: 'Нет доступа к посту',
         );
       }
@@ -71,17 +71,58 @@ class AppPostController extends ResourceController {
     }
   }
 
-  @Operation.get()
-  Future<Response> getPosts() async {
+  @Operation.delete('id')
+  Future<Response> deletePost(
+    @Bind.header(HttpHeaders.authorizationHeader) String header,
+    @Bind.path('id') int id,
+  ) async {
     try {
-      // final id = AppUtils.getIdFromHeader(header);
-      // final user = await managedContext.fetchObjectWithID<User>(id);
-      // user?.removePropertiesFromBackingMap([
-      //   AppConst.accessToken,
-      //   AppConst.refreshToken,
-      // ]);
+      final currentAuthorId = AppUtils.getIdFromHeader(header);
+      final post = await managedContext.fetchObjectWithID<Post>(id);
+      if (post == null) {
+        return AppResponse.serverError(
+          Error,
+          message: 'Пост не найден',
+        );
+      }
+      if (post.author?.id != currentAuthorId) {
+        return AppResponse.serverError(
+          Error,
+          message: 'Нет доступа к посту',
+        );
+      }
+      final qDeletePost = Query<Post>(managedContext)
+        ..where((x) => x.id).equalTo(id);
+      await qDeletePost.delete();
       return AppResponse.ok(
-        message: 'Успешное получение постов',
+        message: 'Успешное удаление поста',
+      );
+    } catch (error) {
+      return AppResponse.serverError(
+        error,
+        message: 'Ошибка удаления поста',
+      );
+    }
+  }
+
+  @Operation.get()
+  Future<Response> getPosts(
+    @Bind.header(HttpHeaders.authorizationHeader) String header,
+  ) async {
+    try {
+      final id = AppUtils.getIdFromHeader(header);
+      final qGetPosts = Query<Post>(managedContext)
+        ..where((x) => x.author?.id).equalTo(id);
+      final List<Post> posts = await qGetPosts.fetch();
+      final backedPosts = posts.map((e) => e.asMap()).toList();
+      if (posts.isEmpty) {
+        return AppResponse.notFound(
+          message: 'Постов нет',
+        );
+      }
+      return AppResponse.ok(
+        body: backedPosts,
+        message: 'Успешно получено постов - ${backedPosts.length}',
       );
     } catch (error) {
       return AppResponse.serverError(
