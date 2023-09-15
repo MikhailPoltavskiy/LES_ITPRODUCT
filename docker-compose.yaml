@@ -9,6 +9,7 @@ version: '3.5'
 services:
 
   auth:
+    restart: on-failure
     build: ./auth
     container_name: auth
     environment:
@@ -19,12 +20,14 @@ services:
       - DB_HOST=db_auth
       - DB_PORT=6101
       - DB_NAME=postgres
+      - TIME=1
     depends_on:
       - db_auth
     networks:
       - intrnal_net
 
   db_auth:
+    restart: on-failure
     container_name: db_auth
     ports:
       - "6101:6101"
@@ -42,6 +45,7 @@ services:
       - intrnal_net
 
   db_data:
+    restart: on-failure
     container_name: db_data
     ports:
       - "6201:6201"
@@ -59,6 +63,7 @@ services:
       - intrnal_net
 
   data:
+    restart: on-failure
     build: ./data
     container_name: data    
     environment:
