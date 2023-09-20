@@ -17,14 +17,24 @@ class AppPostController extends ResourceController {
     @Bind.body() Post post,
   ) async {
     try {
+      if (post.content == null ||
+          post.content?.isEmpty == true ||
+          post.name == null ||
+          post.name?.isEmpty == true) {
+        return AppResponse.badRequest(
+            message: 'Поля name и content обязательны');
+      }
       final id = AppUtils.getIdFromHeader(header);
       final author = await managedContext.fetchObjectWithID<Author>(id);
       if (author == null) {
         final qCreateAuthor = Query<Author>(managedContext)..values.id = id;
         await qCreateAuthor.insert();
       }
+      final size = post.content?.length ?? 0;
       final qCreatePost = Query<Post>(managedContext)
         ..values.author?.id = id
+        ..values.name = post.name
+        ..values.preContent = post.content?.substring(0, size <= 20 ? size : 20)
         ..values.content = post.content;
       await qCreatePost.insert();
       return AppResponse.ok(
@@ -45,28 +55,26 @@ class AppPostController extends ResourceController {
   ) async {
     try {
       final currentAuthorId = AppUtils.getIdFromHeader(header);
-      final post = await managedContext.fetchObjectWithID<Post>(id);
+      final qGetPost = Query<Post>(managedContext)
+        ..where((x) => x.id).equalTo(id)
+        ..where((x) => x.author?.id).equalTo(currentAuthorId)
+        ..returningProperties((x) => [x.content, x.id, x.name]);
+
+      final post = await qGetPost.fetchOne();
       if (post == null) {
         return AppResponse.serverError(
           Error,
           message: 'Пост не найден',
         );
       }
-      if (post.author?.id != currentAuthorId) {
-        return AppResponse.serverError(
-          Error,
-          message: 'Нет доступа к посту',
-        );
-      }
-      post.backing.removeProperty('author');
       return AppResponse.ok(
         body: post.backing.contents,
-        message: 'Успешное получение своих постов',
+        message: 'Успешное получение поста',
       );
     } catch (error) {
       return AppResponse.serverError(
         error,
-        message: 'Ошибка получения постов',
+        message: 'Ошибка получения поста',
       );
     }
   }

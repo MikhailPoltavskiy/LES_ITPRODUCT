@@ -25,6 +25,8 @@ services:
       - db_auth
     networks:
       - intrnal_net
+    volumes:
+      - auth_vol:/app/
 
   db_auth:
     restart: on-failure
@@ -78,6 +80,8 @@ services:
       - db_data
     networks:
       - intrnal_net
+    volumes:
+      - data_vol:/app/
 
   nginx:
     container_name: nginx
@@ -94,7 +98,9 @@ services:
 
 volumes:
   db_auth_vol: {}
-  db_data_vol: {}  
+  db_data_vol: {}
+  auth_vol: {}  
+  data_vol: {}
 
 networks:
   intrnal_net:
