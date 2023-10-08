@@ -26,7 +26,7 @@ services:
     networks:
       - intrnal_net
     volumes:
-      - auth_vol:/app/
+      - auth_vol:/app/migrations
 
   db_auth:
     restart: on-failure
@@ -81,7 +81,7 @@ services:
     networks:
       - intrnal_net
     volumes:
-      - data_vol:/app/
+      - data_vol:/app/migrations
 
   nginx:
     container_name: nginx
